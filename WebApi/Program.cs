@@ -1,8 +1,5 @@
 using HealthChecks.UI.Client;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using WebApi.Configuration.Logging;
 using WebApi.Configuration.RabbitMQ;
@@ -25,7 +22,7 @@ builder.Logging.AddConsole();
 
 builder.Services.AddApi(configuration)
                 .AddMongoDB(configuration)
-                .AddRabbitMQ(configuration);
+                .AddRabbitmq(configuration);
 
 builder.Services.AddHealthChecks()
     .AddRabbitMQ(rabbitConnectionString: configuration["MessageBroker:Host"]!,

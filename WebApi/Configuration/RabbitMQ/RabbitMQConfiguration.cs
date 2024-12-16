@@ -6,7 +6,7 @@ namespace WebApi.Configuration.RabbitMQ;
 
 public static class RabbitMQConfiguration
 {
-    public static IServiceCollection AddRabbitMQ(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddRabbitmq(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddMassTransit(busConfig =>
         {
