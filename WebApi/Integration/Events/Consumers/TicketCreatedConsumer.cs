@@ -1,8 +1,10 @@
-﻿using ConvCrmContracts.Crm.Events;
+﻿using Amazon.Runtime.Endpoints;
+using ConvCrmContracts.Crm.Events;
+using WebApi.Schemas;
 
 namespace WebApi.Integration.Events.Consumers;
 
-public class TicketCreatedConsumer(MongoDBService mongo) : IConsumer<TicketCreated>
+public class TicketCreatedConsumer(MongoDBService mongo, ISendEndpointProvider endpointProvider) : IConsumer<TicketCreated>
 {
     public async Task Consume(ConsumeContext<TicketCreated> context)
     {
@@ -31,5 +33,16 @@ public class TicketCreatedConsumer(MongoDBService mongo) : IConsumer<TicketCreat
         .Set($"{nameof(Conversation.logs)}.$[elem].{nameof(Log.ticket_id)}", @event.ticket_id);
 
         await mongo.Conversations.UpdateOneAsync(filter, updateTicketId, new UpdateOptions { ArrayFilters = arrayFilters });
+
+        //Enviar nueva actividad
+        var newLastMessage = new NewActivityCountdown
+        {
+            uuid = Guid.NewGuid(),
+            timestamp = DateTime.Now,
+            conversation_id = @event.conversation_id,
+            ticket_id = @event.ticket_id
+        };
+
+        await endpointProvider.Send(nameof(NewActivityCountdown), newLastMessage);
     }
 }

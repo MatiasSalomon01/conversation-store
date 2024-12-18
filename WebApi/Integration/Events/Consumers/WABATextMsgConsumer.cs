@@ -3,6 +3,7 @@ using WebApi.Schemas;
 using WebApi.Common;
 using ConvCrmContracts.Conv.Querys;
 using MassTransit;
+using Microsoft.VisualBasic;
 
 namespace WebApi.Integration.Events.Consumers;
 
@@ -46,6 +47,8 @@ public class WABATextMsgConsumer(MongoDBService mongo, ILogger<WABATextMsgConsum
 
             var newConversation = await HandleNewConversation(@event, whatsAppMessage, @event.user_details);
 
+            await SendNewLasMessage(newConversation!, whatsAppMessage);
+
             if (newConversation is null) return;
 
             await SendToAI(newConversation, @event.body, whatsAppMessage.timestamp, [lastMessageSended]);
@@ -69,6 +72,8 @@ public class WABATextMsgConsumer(MongoDBService mongo, ILogger<WABATextMsgConsum
             }
 
             await HandleExistingConversation(conversation, filter, whatsAppMessage);
+
+            await SendNewLasMessage(conversation, whatsAppMessage);
 
             if (conversation.manage_by is ManageBy.AIAgent)
             {
@@ -173,5 +178,18 @@ public class WABATextMsgConsumer(MongoDBService mongo, ILogger<WABATextMsgConsum
         {
             await llamaService.SendAIAnswer(body, conversation);
         }
+    }
+
+    private async Task SendNewLasMessage(Conversation conversation, WhatsAppTextLog whatsAppMessage)
+    {
+        var newLastMessage = new NewActivityCountdown
+        {
+            uuid = Guid.NewGuid(),
+            timestamp = whatsAppMessage.timestamp,
+            conversation_id = conversation.id,
+            ticket_id = conversation.current_ticket_id
+        };
+
+        await endpointProvider.Send(nameof(NewActivityCountdown), newLastMessage);
     }
 }

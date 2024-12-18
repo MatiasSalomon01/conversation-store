@@ -32,15 +32,15 @@ public class AIAgentAnswerGeneratedConsumer(MongoDBService mongo, ISendEndpointP
 
         if (@event.open_ticket)
         {
-            var lastMessage = conversation.logs.OfType<WhatsAppTextLog>().LastOrDefault()?.fallback_text ?? string.Empty;
-
-            var openTicketCommand = new OpenTicket(conversation.id, conversation.source_id, Channel.WhatsApp.ToString(), conversation.user_details, lastMessage);
-            await endpointProvider.Send(nameof(OpenTicket), openTicketCommand);
-
             var filterManagedBy = Builders<Conversation>.Update
                 .Set(conv => conv.manage_by, ManageBy.Waiting);
 
             await mongo.Conversations.UpdateOneAsync(filter, filterManagedBy);
+
+            var lastMessage = conversation.logs.OfType<WhatsAppTextLog>().LastOrDefault()?.fallback_text ?? string.Empty;
+
+            var openTicketCommand = new OpenTicket(conversation.id, conversation.source_id, Channel.WhatsApp.ToString(), conversation.user_details, lastMessage);
+            await endpointProvider.Send(nameof(OpenTicket), openTicketCommand);
         }
 
         //TODO: de donde sacar el sender y el receiver para enviar de vuelta al whatsapp
